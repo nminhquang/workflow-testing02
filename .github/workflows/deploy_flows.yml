@@ -16,6 +16,7 @@ jobs:
   build-and-scan:
     name: Build & Scan Code
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.ref == 'releases/*'
     outputs:
       image_tag: ${{ steps.build_image.outputs.image_tag }}
       release: ${{ steps.build_image.outputs.release }}
@@ -102,11 +103,10 @@ jobs:
       
       - name: Get the latest image
         run: |
-          git log --merges --pretty=format:"%P" -n 1 | awk '{print $2}'
-          latest_branch=$(git log --merges --pretty=format:"%P" -n 1 | awk '{print $2}')
-          echo "Latest merged branch: $latest_branch"         
+          release=$(git log main --merges --first-parent --pretty=format:"%s" -n 1  | cut -d "/" -f3)
+          echo "release=$release" >> $GITHUB_ENV
           
 
       - name: Deploy to PROD
         run: |
-          echo "Deploying release: ${{ needs.build-and-scan.outputs.image_tag }} to prod env"
+          echo "Deploying release: $release-latest to prod env"
