@@ -48,6 +48,7 @@ jobs:
       - name: Run Code Scanning
         run: |
           echo "Code analysis"
+          echo $(git log)
 
   deploy-dev:
     name: Deploy to Dev
