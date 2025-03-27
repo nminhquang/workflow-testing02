@@ -46,8 +46,7 @@ jobs:
 
       - name: Run Code Scanning
         run: |
-          latest_branch=$(git log --merges --pretty=format:"%P" -n 1 | awk '{print $2}')
-          echo "Latest merged branch: $latest_branch"
+          echo "Code analysis"
 
   deploy-dev:
     name: Deploy to Dev
@@ -103,10 +102,9 @@ jobs:
       
       - name: Get the latest image
         run: |
-          git fetch --all
-          branch=$(git for-each-ref --sort=committerdate refs/remotes/ --format='%(refname:short)' | head -n 1)
-          echo $branch
-          
+          git log --merges --pretty=format:"%P" -n 1 | awk '{print $2}'
+          latest_branch=$(git log --merges --pretty=format:"%P" -n 1 | awk '{print $2}')
+          echo "Latest merged branch: $latest_branch"         
           
 
       - name: Deploy to PROD
