@@ -50,7 +50,7 @@ jobs:
           echo "Code analysis"
           echo $(git log)
           echo "///"
-          echo $(git log ${{ github.ref_name }} --merges --first-parent --pretty=format:"%s" -n 1)
+          echo $(git log --merges --grep="Merge pull request" --pretty=format:"%s" -n 1 | sed -n "s/Merge pull request #[0-9]* from [^/]*\/\(.*\)/\1/p")
 
   deploy-dev:
     name: Deploy to Dev
