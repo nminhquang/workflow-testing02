@@ -46,10 +46,8 @@ jobs:
 
       - name: Run Code Scanning
         run: |
-          echo "Code scanning"
-          git fetch --all
-          branch=$(git branch -r)
-          echo $branch
+          latest_branch=$(git log --merges --pretty=format:"%P" -n 1 | awk '{print $2}')
+          echo "Latest merged branch: $latest_branch"
 
   deploy-dev:
     name: Deploy to Dev
