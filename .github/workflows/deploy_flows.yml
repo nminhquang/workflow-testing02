@@ -50,7 +50,7 @@ jobs:
           echo "Code analysis"
           echo $(git log)
           echo "///"
-          echo $(git log main --merges --first-parent --pretty=format:"%s" -n 1)
+          echo $(git log ${{ github.ref_name }} --merges --first-parent --pretty=format:"%s" -n 1)
 
   deploy-dev:
     name: Deploy to Dev
