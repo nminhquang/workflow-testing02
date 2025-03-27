@@ -16,7 +16,7 @@ jobs:
   build-and-scan:
     name: Build & Scan Code
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && github.ref == 'releases/*'
+    if: startsWith(github.ref, 'refs/heads/develop') || startsWith(github.ref, 'refs/heads/releases/')
     outputs:
       image_tag: ${{ steps.build_image.outputs.image_tag }}
       release: ${{ steps.build_image.outputs.release }}
