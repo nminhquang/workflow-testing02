@@ -1,0 +1,116 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - develop
+      - releases/*
+      - main
+  pull_request:
+    branches:
+      - develop
+      - releases/*
+      - main
+
+jobs:
+  build-and-scan:
+    name: Build & Scan Code
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build_image.outputs.image_tag }}
+      release: ${{ steps.build_image.outputs.release }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        id: build_image
+        run: |
+          
+          short_sha=$(echo ${{ github.sha }} | cut -c1-7)
+          if [[ ${{ github.ref }} == "refs/heads/develop" ]]; then
+            release="develop"
+          else
+            release=$(echo ${{ github.ref }} | cut -d "/" -f4)
+          fi
+          image_tag=${release}-${short_sha}
+          echo "release=${release}" >> $GITHUB_OUTPUT
+          echo "image_tag=${image_tag}" >> $GITHUB_OUTPUT
+          echo "Building docker image ${{ github.repository }}:$image_tag"
+          echo "Tagging build image: $image_tag and ${release}-latest"
+          echo "Pushing images ${{ github.repository }}:$image_tag"
+          echo "Pushing images ${{ github.repository }}:${release}-latest"
+
+      - name: Run Code Scanning
+        run: |
+          echo "Code scanning"
+          git fetch --all
+          branch=$(git for-each-ref --sort=committerdate refs/remotes/ --format='%(refname:short)' | head -n 1)
+          echo $branch
+
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch k8s kubeconfig of dev's cluster
+        run: |
+          echo "Getting kubeconfig (dev)"
+
+      - name: Deploy to Dev
+        run: |
+          
+          echo "Deploying to ${{ needs.build-and-scan.outputs.image_tag }} to dev env"
+
+  deploy-uat:
+    name: Deploy to UAT
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+    if: startsWith(github.ref, 'refs/heads/releases/')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name:  Fetch k8s kubeconfig of UAT's cluster
+        run: |
+          echo "Getting kubeconfig (uat)"
+
+
+      - name: Deploy to UAT
+        run: |
+          echo "Deploying release: ${{ needs.build-and-scan.outputs.image_tag }} to uat env"
+          echo "Getting environment variables"
+          env
+
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: PRODUCTION  # Enforces manual approval before proceeding
+    if: startsWith(github.ref, 'refs/heads/main')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch k8s kubeconfig of PROD's cluster
+        run: |
+          echo "Getting kubeconfig (PROD)"
+          echo "Getting environment variables"
+      
+      - name: Get the latest image
+        run: |
+          git fetch --all
+          branch=$(git for-each-ref --sort=committerdate refs/remotes/ --format='%(refname:short)' | head -n 1)
+          echo $branch
+          
+          
+
+      - name: Deploy to PROD
+        run: |
+          echo "Deploying release: ${{ needs.build-and-scan.outputs.image_tag }} to prod env"
